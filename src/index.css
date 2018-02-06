@@ -1,0 +1,75 @@
+body {
+  margin: 0;
+  padding: 0;
+  font-family: sans-serif;
+}
+.main{
+  background-image: linear-gradient(rgb(104, 145, 162), rgb(12, 97, 33));
+}
+.myrow{
+  background-color: black;
+  color: white;
+  font-weight: bold;
+}
+h1{
+
+  color: black;
+  font-family: Arial;
+}
+.btnS{
+  background-color: red;
+  color: white;
+  height: 40px;
+  width: 100px;
+}
+.btnU{
+   background-color: yellow;
+   color: black;
+  height: 40px;
+  width: 100px;
+ }
+.mypage{
+  width: 100px;
+  height: 50px;
+  /*background-color: lightsalmon;*/
+}
+span{
+  color: red;
+}
+.mytable{
+  background-color: peachpuff;
+  color: black;
+  font-weight: bold;
+  height: 200px;
+  width: 200px;
+}
+.action{
+  color:red;
+}
+.myForm{
+  /*background-color: peachpuff;*/
+  /*margin: 50px;*/
+  /*height: 400px;*/
+  /*width: 400px;*/
+  padding: 20px;
+}
+.sort1{
+  height: 40px;
+  width: 200px;
+  margin: 50px;
+  padding-top:10px;
+  text-align: center;
+  font-weight:bold;
+  background-color: red;
+  color: white;
+}
+.sort2{
+  height: 40px;
+  width: 200px;
+  margin: 50px;
+  padding-top:10px;
+  text-align: center;
+  font-weight:bold;
+  background-color: red;
+  color: white;
+}
