@@ -36,15 +36,12 @@ h1{
   display: inline;
   padding: 10px;
 }
-.dot{
-  font-size: 60px;
-  font-weight: bold;
-}
+
 span{
   color: red;
 }
 .mytable{
-  background-color: peachpuff;
+
   color: black;
   font-weight: bold;
   height: 200px;

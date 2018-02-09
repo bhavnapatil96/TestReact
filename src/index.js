@@ -1,12 +1,18 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
+import {} from 'react-bootstrap'
+import {Table,Input} from 'reactstrap'
+import Modal from 'react-modal';
 import './index.css';
+import 'react-confirm-alert/src/react-confirm-alert.css'
+import { confirmAlert } from 'react-confirm-alert';
 const axios =require('axios');
 let len=0,totalPages=0;
 class Home extends React.Component{
     constructor(){
         super();
         this.state={
+            temp:[],
             data1:[],
             editData:[],
             editid:'',
@@ -18,12 +24,15 @@ class Home extends React.Component{
             isEditing:false,
             state1:[],
             city1:[],
-            pages:[],
+            isActive:false,
             currentPage:'',
             currentData:[],
-            searchData:[],
             totalRecords:5,
-            curr:1
+            curr:1,
+            isSearchFinish:true,
+            //Search
+            isSearch:false,
+            searchData:[]
         };
         this.list();
         axios.get('http://localhost:8282/statelist').then((success)=>{
@@ -47,6 +56,11 @@ class Home extends React.Component{
             console.log(`Error : `,e.message);
         });
     }
+    clearData=()=>{
+        this.state.editData=[];
+        this.state.currentData=[];
+        console.log('Edit Data : '.this.state.editData)
+    }
     list=()=>{
         axios.get('http://localhost:8282/list').then((success)=>{
             if(!success)
@@ -57,44 +71,48 @@ class Home extends React.Component{
             console.log(`Data :`, this.state.data1);
             console.log('Total Records = ',this.state.data1.length);
 
-            len=this.state.data1.length;
-            totalPages=Math.ceil(len/this.state.totalRecords);
-            console.log('Total Pages = ',totalPages);
 
-            for(let i=1;i<=totalPages;i++)
-            {
-                this.state.pages.push(i);
-            }
 
         }).catch((e)=>{
             console.log(`Error : `,e.message);
         })
     }
-
+    submit = (sid) => {
+        confirmAlert({
+            title: 'Confirm to submit',                        // Title dialog
+            message: 'Are you sure to do this.',               // Message dialog
+            childrenElement: () => <div>Confirm Box</div>,       // Custom UI or Component
+            confirmLabel: 'Confirm',                           // Text button confirm
+            cancelLabel: 'Cancel',                             // Text button cancel
+            onConfirm: () => {
+                //  alert('a');
+                this.deleteData(sid);
+            },
+            onCancel: () => {//alert('b')
+            }
+        })
+    };
     sendData=(e)=>{
-        alert();
+        console.log(this.state.isActive);
         e.preventDefault();
         console.log("Employee data",this.state.currentData);
         axios.post(
             'http://localhost:8282/add',
             {
-                firstname:this.state.currentData.firstname,
-                lastname:this.state.currentData.lastname,
-                email:this.state.currentData.email,
-                state:this.state.currentData.state,
-                city:this.state.currentData.city
+                ...this.state.editData
 
             }).then((res)=>{
-            console.log(`Response`,res.data);
 
             this.state.data1.push(res.data);
             this.setState({data1:this.state.data1});
             console.log(`new data `,this.state.data1);
 
+            this.toggleActive();
             this.setState({
-                editData:'',
-                currentData:''
-            })
+                data1:this.state.data1.reverse(),
+            });
+            //this.clearData();
+
             //this.props.history.push('/list');
         }).catch((e)=>{
             console.log(`Error : ${e.message}`);
@@ -102,6 +120,7 @@ class Home extends React.Component{
     }
     updateData=(e)=>{
         e.preventDefault();
+        this.toggleActive();
         console.log("Employee data",this.state);
         axios.post(
             'http://localhost:8282/update',
@@ -114,16 +133,13 @@ class Home extends React.Component{
                 city:this.state.editData.city
 
             }).then((res)=>{
-            this.setState({
-                isEditing: false
-            })
-            console.log(`Response`,res.data);
 
-            //this.state.data1.push(res.data);
-            this.setState({data1:this.state.data1})
-            console.log(`new data `,this.state.data1);
-            //this.list();
-            //this.props.history.push('/list');
+            this.setState({
+                data1:this.state.data1,
+                isEditing: false,
+            })
+            this.clearData();
+            this.toggleActive();
         }).catch((e)=>{
             console.log(`Error : ${e.message}`);
         });
@@ -138,34 +154,16 @@ class Home extends React.Component{
                 id:eid
             }).then((res)=>{
             console.log(`Response ${res.data}`);
-            this.state.data1.pop(res.data);
-            this.setState({data1:this.state.data1})
-            // this.setState({
-            //     data1:res.data
-            // })
+
+            var dt=this.state.data1.filter((d)=>res.data['_id']!==d._id);
+
+            this.setState({data1:dt})
+
             //this.list();
 
         }).catch((e)=>{
             console.log(`Error : ${e.message}`);
         });
-    }
-    fillCity=(event)=>{
-        alert(event.target.value);
-        axios.post(
-            'http://localhost:8282/findbystate',
-            {
-                statename:event.target.value
-            }).then((success)=>{
-           // console.log(`City ${success.data[0].statename}`);
-
-            this.setState({city1:success.data});
-            console.log(`City `,this.state.city1);
-           // this.sendData();
-
-        }).catch((e)=>{
-            console.log(`Error : ${e.message}`);
-        });
-
     }
     sort=(e)=>{
         // axios.get('http://localhost:8282/sort').then((success)=>{
@@ -180,10 +178,10 @@ class Home extends React.Component{
         // });
 
 
-        var key=e.target.value;
+        var key=e.target.id;
         console.log(key);
         var myData = [].concat(this.state.data1)
-            .sort((a, b) => a.key > b.key);
+            .sort((a, b) => a[key] > b[key]);
 
         this.setState({
             data1:myData
@@ -191,7 +189,7 @@ class Home extends React.Component{
         console.log('sorted : ',this.state.data1);
 
     }
-    dsort=()=>{
+    dsort=(e)=>{
         // axios.get('http://localhost:8282/dsort').then((success)=>{
         //     if(!success)
         //     {
@@ -202,8 +200,10 @@ class Home extends React.Component{
         // }).catch((e)=>{
         //     console.log(`Error : `,e.message);
         // });
+        var key=e.target.id;
+        console.log(key);
         var myData = [].concat(this.state.data1)
-            .sort((a, b) => a.firstname > b.firstname);
+            .sort((a, b) => a[key] > b[key]);
 
         this.setState({
             data1:myData.reverse()
@@ -212,20 +212,23 @@ class Home extends React.Component{
 
     }
     mypage=(no)=>{
-        alert(no);
-        axios.post(
-            'http://localhost:8282/mypage',
-            {
-                no:no,
-                records:this.state.totalRecords
-            }).then((res)=>{
-           // console.log(`Response ${res.data}`);
-            this.setState({data1:res.data})
-            //this.list();
 
-        }).catch((e)=>{
-            console.log(`Error : ${e.message}`);
-        });
+        // axios.post(
+        //     'http://localhost:8282/mypage',
+        //     {
+        //         no:no,
+        //         records:this.state.totalRecords
+        //     }).then((res)=>{
+        //    // console.log(`Response ${res.data}`);
+        //     this.setState({data1:res.data})
+        //     //this.list();
+        //
+        // }).catch((e)=>{
+        //     console.log(`Error : ${e.message}`);
+        // });
+        this.setState({
+            curr:no
+        })
     }
     handleChange=(event)=>{
 
@@ -247,12 +250,6 @@ class Home extends React.Component{
         });
 
     }
-    handleCity=(event)=>{
-
-        console.log('city : ',event.target.value);
-
-
-    }
     handleEntry=(e)=>{
        // alert(e.target.value);
         this.setState({
@@ -261,194 +258,331 @@ class Home extends React.Component{
         alert(this.state.totalRecords);
     }
     handleSearch=(e)=>{
-        let key=document.getElementById('txtfirstname').value;
-        alert(key);
-    this.state.data1.map((emp,i)=>{
-            if(emp.firstname===key||emp.lastname===key||emp.email===key||emp.city===key||emp.state===key)
-            {
-                this.state.searchData.push(emp);
-            }
-        })
+        e.preventDefault();
+        console.log("msg",e.target.value)
         this.setState({
-            data1:this.state.searchData
+            //data1:this.state.searchData
+            isSearch:true,
+            searchData:[],
+           // temp:[]
+
+        });
+        //let key=document.getElementById('txtfirstname').value;
+        let key=e.target.value;
+        let {searchData} = this.state;
+        searchData=[];
+        this.state.data1.map((values,i)=>{
+           // console.log('asdasd',values.firstname);
+            if(values.firstname.includes(e.target.value))
+            {
+                searchData.push(values);
+            }
+            else if(values.lastname.includes(e.target.value))
+            {
+                searchData.push(values);
+            }
+            if(e.target.value==="")
+            {
+             //   alert();
+                this.setState({
+                    isSearch:false
+                })
+            }
+            // if(emp.firstname===key||emp.lastname===key||emp.email===key||emp.city===key||emp.state===key)
+            // {
+            //     this.state.searchData.push(emp);
+            //
+            //     this.setState({
+            //         //data1:this.state.searchData
+            //         isSearch:true
+            //
+            //     });
+            // }
+        });
+
+        this.setState({searchData},()=>{
+            console.log("searchArray",searchData);
+        });
+    }
+    toggleActive=()=>{
+
+        this.setState({
+            isActive:!this.state.isActive,
+            isEditing:false
         })
-
-
+        this.state.editData=[]
     }
-    componentDidMount(){
 
-    }
+
     render(){
+        var pages=[]
         const isEditing =this.state.isEditing;
+        //const isSearch =this.state.isSearch;
+        const isSearchFinish =this.state.isSearchFinish;
+
+
         const editData1=this.state.editData;
-        var lastrec=this.state.curr*5;
-        var firstrec=lastrec-4;
+        const searchData=this.state.searchData;
+
+
+        var lastrec=this.state.curr*this.state.totalRecords;
+        var firstrec=lastrec-this.state.totalRecords;
         var totrec=this.state.data1.slice(firstrec,lastrec);
 
+
+        len=this.state.data1.length;
+        totalPages=Math.ceil(len/this.state.totalRecords);
+        console.log('Total Pages = ',totalPages);
+
+        for(let i=1;i<=totalPages;i++)
+        {
+            pages.push(i);
+        }
 
 
 
         return(
+            <div className="">
+                <br/><br/>
+                <div className=" col-lg-12">
+                    <Modal isOpen={this.state.isActive} onRequestClose={this.toggleActive}>
 
-            <section className="main">
-                <center>
-
-
-                <div className="myForm">
-                    <h1>Employee Management System</h1>
-                    <form>
-                        <table className="myformtable" border="1">
-                            <tr>
-                                <td><label>Firstname</label></td>
-                                <td><input type="text" value={editData1.firstname} onChange={this.handleChange} name="firstname" id="txtfname" required={true}/><span>*</span></td>
-                            </tr>
-                            <tr>
-                                <td><label>Lastname</label></td>
-                                <td><input type="text" value={editData1.lastname} onChange={this.handleChange}  name="lastname" id="txtlname" required={true}/><span>*</span></td>
-                            </tr>
-                            <tr>
-                                <td><label>Email</label></td>
-                                <td><input type="email" value={editData1.email}  onChange={this.handleChange} name="email" id="txtemail" required={true}/><span>*</span></td>
-                            </tr>
-                            <tr>
-                                <td><label>State</label></td>
-                                <td>
-                                    <select name="state" id="selState" value={editData1.state} onChange={this.handleChange}>
-                                       <option>--select--</option>
-                                        {
-                                            this.state.state1.map((st,i)=>{
-                                                return <option value={st.statename}>{st.statename}</option>
-                                            })
-                                        }
-                                    </select><span>*</span>
-                                </td>
-
-                            </tr>
-                            <tr>
-                                <td><label>City</label></td>
-                                <td>
-                                    <select name="city" id="selCity"   onChange={this.handleChange} >
-
-                                        <option value={editData1.city}>{editData1.city}</option>
-
-                                        {
-                                            this.state.city1.map((c,i)=>{
-                                                if(c.statename === this.state.currentData.state) {
-                                                        return <option value={c.cityname}>{c.cityname}</option>
-                                                    }
-
-                                            })
-                                        }
-                                    </select><span>*</span>
-
-                                  </td>
-                            </tr>
-                            <tr>
-                                {
-                                    isEditing?
-
-                                        <td colspan="2"><button className="btnS"  name="btns" value="Update" onClick={this.updateData}>Update</button></td>
-                                    :
-
-                                    <td colspan="2"><button className="btnU"  name="btns" value="Insert" onClick={this.sendData}>Insert</button></td>
-                                }
-
-                            </tr>
-                        </table>
-
-
-                    </form>
-                </div>
-                <div className="myTable" >
-                    <div>
-                        Shows<select id="selEntry" onChange={this.handleEntry}>
-                        <option value="5">5</option>
-                        <option value="3">3</option>
-                        <option value="4">4</option>
-                        </select>
-                    </div>
-                    <div>
-                        Search : <input type="text" name="firstname" id="txtfirstname"/><button onClick={this.handleSearch}>Search</button>
-                    </div>
-                    <table border="1" className="mytable">
-                        <tr className="myrow">
-                            <td>Firstname
-                                <span value="firstname" onClick={this.sort} className="glyphicon glyphicon-triangle-bottom">*</span>
-                                <span value="lastname" onClick={this.dsort} className="glyphicon glyphicon-triangle-top"></span>
-                            </td>
-                            <td value="lastname" onClick={this.sort}>Lastname</td>
-                            <td>Email</td>
-                            <td>State</td>
-                            <td>city</td>
-                            <td>Action 1</td>
-                            <td>Action 2</td>
-
-                        </tr>
-                        {
-                            this.state.data1.map((s,index)=>{
-                                if(index<this.state.totalRecords)
-                                {
-                                    return <tr>
-                                        <td>{s.firstname}</td>
-                                        <td>{s.lastname}</td>
-                                        <td>{s.email}</td>
-                                        <td>{s.state}</td>
-                                        <td>{s.city}</td>
-
-                                        <td className="action">
-                                            <button onClick={()=>{
-                                                console.log("id : ",s._id);
-                                                this.deleteData(s._id);
-                                            }}>Delete</button>
-                                        </td>
-                                        <td className="action">
-
-                                            <button onClick={()=>{
-                                                console.log("id : ",s._id);
-
-                                                this.setState({
-                                                    editid:s._id,
-                                                    isEditing:true,
-                                                    editData:s
+                        <form onSubmit={this.sendData}>
+                            <Table className="myformtable">
+                                <tr>
+                                    <td>
+                                        <p className="text-primary">Employee Management System</p>
+                                    </td>
+                                    <td><i className="fa fa-close" onClick={this.toggleActive}></i></td>
+                                </tr>
+                                <tr>
+                                    <td><label>Firstname</label></td>
+                                    <td><input type="text" value={editData1.firstname} onChange={this.handleChange} name="firstname" id="txtfname" required={true}/><span>*</span></td>
+                                </tr>
+                                <tr>
+                                    <td><label>Lastname</label></td>
+                                    <td><input type="text" value={editData1.lastname} onChange={this.handleChange}  name="lastname" id="txtlname" required={true}/><span>*</span></td>
+                                </tr>
+                                <tr>
+                                    <td><label>Email</label></td>
+                                    <td><input type="email" value={editData1.email}  onChange={this.handleChange} name="email" id="txtemail" required={true}/><span>*</span></td>
+                                </tr>
+                                <tr>
+                                    <td><label>State</label></td>
+                                    <td>
+                                        <select name="state" id="selState" value={editData1.state} onChange={this.handleChange}>
+                                           <option>--select--</option>
+                                            {
+                                                this.state.state1.map((st,i)=>{
+                                                    return <option value={st.statename}>{st.statename}</option>
                                                 })
-                                               // this.updateData();
-                                            }}>Edit</button>
-                                        </td>
-                                    </tr>
-                                }
+                                            }
+                                        </select><span>*</span>
+                                    </td>
+
+                                </tr>
+                                <tr>
+                                    <td><label>City</label></td>
+                                    <td>
+                                        <select name="city" id="selCity" onChange={this.handleChange} >
+
+                                            <option value={editData1.city}>{editData1.city}</option>
+
+                                            {
+                                                this.state.city1.map((c,i)=>{
+                                                    if(c.statename === editData1.state) {
+                                                            return <option value={c.cityname}>{c.cityname}</option>
+                                                        }
+
+                                                })
+                                            }
+                                        </select><span>*</span>
+
+                                      </td>
+                                </tr>
+                                <tr>
+                                    {
+                                        isEditing?
+
+                                            <td colspan="2"><button className="btn btn-secondary"  name="btns" value="Update" onClick={this.updateData}>Update</button></td>
+                                        :
+
+                                        <td colspan="2"><button className="btn btn-warning" type="submit" name="btns" value="Insert" >Insert</button></td>
+                                    }
+
+                                </tr>
+                            </Table>
 
 
-                               })
-                        }
-                    </table>
-                    <br/><br/>
-                        <div>
-                            {
-                                this.state.pages.map((p,i)=>{
-                                    return <li className="mypage" onClick={()=>{
-                                        this.mypage(p);
-                                    }}>{p}</li>
-                                })
-                            }
+                        </form>
+                    </Modal>
+                </div>
+                <div id="divShow" className="">
+                    <div className="row">
+                             <div className="col-lg-1 offset-2 ">
+                            <div className="form-group">
+                                <select id="selEntry" onChange={this.handleEntry} className="form-control">
+                                <option value="5">5</option>
+                                <option value="3">3</option>
+                                <option value="4">4</option>
+                                </select>
+                            </div>
                         </div>
 
-                    <div className="mylinks">
-                        <div className="sort1">
-                            <a onClick={()=>{
-                                this.sort();
-                            }}>Sort by Ascending</a>
-                        </div>
-                        <div className="sort2">
-                            <a onClick={()=>{
-                                this.dsort();
-                            }}>Sort by Descending</a>
-                        </div>
+                            <div id="divsearch" className="col-lg-6">
+
+                                <div className=" input-group">
+                                    <input placeholder="Firstname here" onChange={
+                                        (e)=>{this.handleSearch(e)
+                                    }} type="text" name="firstname" id="txtfirstname" className="form-control" />
+                                    {/*<button  className=" btn btn-primary "><i className="fa fa-search" onClick={this.handleSearch} > </i></button>*/}
+                                </div>
+
+                            </div>
+
+                            <div className="col-lg-1">
+                                <button className=" btn btn-primary " onClick={this.toggleActive}>+</button>
+                            </div>
                     </div>
+                    <div className="col-lg-12"> <h3>{}</h3></div>
+                    <div className="col-lg-8 offset-2 table-responsive">
+                        <table  className="table table-hover ">
+                            <tr className="myrow">
+                                <td>Firstname
+                                    <a id="firstname" onClick={this.sort} className="fa fa-chevron-up"></a>
+                                    <a id="firstname" onClick={this.dsort} className="fa fa-chevron-down"></a>
+                                </td>
+                                <td>Lastname
+                                    <a id="lasttname" onClick={this.sort} className="fa fa-chevron-up"></a>
+                                    <a id="lasttname" onClick={this.dsort} className="fa fa-chevron-down"></a></td>
+                                <td>Email
+                                    <a id="email" onClick={this.sort} className="fa fa-chevron-up"></a>
+                                    <a id="email" onClick={this.dsort} className="fa fa-chevron-down"></a></td>
+                                <td>State
+                                    <a id="state" onClick={this.sort} className="fa fa-chevron-up"></a>
+                                    <a id="state" onClick={this.dsort} className="fa fa-chevron-down"></a></td>
+                                <td>city
+                                    <a id="city" onClick={this.sort} className="fa fa-chevron-up"></a>
+                                    <a id="city" onClick={this.dsort} className="fa fa-chevron-down"></a>
+                                </td>
+                                <td>Action 1</td>
+                                <td>Action 2</td>
+
+                            </tr>
+                            {
+                                (this.state.isSearch)?
+                                    this.state.searchData.map((s,index)=>{
+                                        return <tr>
+                                            <td>{s.firstname}</td>
+                                            <td>{s.lastname}</td>
+                                            <td>{s.email}</td>
+                                            <td>{s.state}</td>
+                                            <td>{s.city}</td>
+
+                                            <td className="action">
+                                                <button className="btn btn-outline-danger" onClick={()=>{
+                                                    console.log("id : ",s._id);
+                                                    this.submit(s._id);
+                                                }}>Delete</button>
+                                            </td>
+                                            <td className="action">
+
+                                                <button  className="btn btn-outline-primary" onClick={()=>{
+                                                    console.log("id : ",s._id);
+                                                    this.setState({
+                                                        editid:s._id,
+                                                        isEditing:true,
+                                                        editData:s,
+                                                        isActive:true
+                                                    })
+
+                                                    // this.updateData();
+                                                }}>Edit</button>
+                                            </td>
+
+                                        </tr>
+
+                                    })
+                                    :
+                                    totrec.map((s,index)=>{
+                                        if(index<this.state.totalRecords)
+                                        {
+                                            return <tr>
+                                                <td>{s.firstname}</td>
+                                                <td>{s.lastname}</td>
+                                                <td>{s.email}</td>
+                                                <td>{s.state}</td>
+                                                <td>{s.city}</td>
+
+                                                <td className="action">
+                                                    <button className="btn btn-outline-danger" onClick={()=>{
+                                                        console.log("id : ",s._id);
+                                                        this.submit(s._id);
+                                                    }}>Delete</button>
+                                                </td>
+                                                <td className="action">
+
+                                                    <button className="btn btn-outline-primary" onClick={()=>{
+                                                        console.log("id : ",s._id);
+
+                                                        this.setState({
+                                                            editid:s._id,
+                                                            isEditing:true,
+                                                            editData:s,
+                                                            isActive:true
+                                                        })
+                                                        // this.updateData();
+                                                    }}>Edit</button>
+                                                </td>
+                                            </tr>
+                                        }
+
+
+                                    })
+
+                            }
+                        </table>
+                    </div>
+                    <div className="col-lg-12 offset-5" >
+
+                            {
+                            <div>
+                                <ul className="pagination">
+
+                                    {pages.map((p, i) => {
+                                        return <li className="active" onClick={() => {
+                                            this.mypage(p);
+                                        }}><a href="#">{p}</a></li>
+                                    })
+                                    }
+
+                                </ul>
+                                <p>Shows {this.state.totalRecords} records from {len} Entries </p>
+                            </div>
+
+                            }
+
+                    </div>
+                    {/*<div className="col-lg-12" >*/}
+                        {/*<div className="mylinks">*/}
+                            {/*<div className="sort1">*/}
+                                {/*<a onClick={()=>{*/}
+                                    {/*this.sort();*/}
+                                {/*}}>Sort by Ascending</a>*/}
+                            {/*</div>*/}
+                            {/*<div className="sort2">*/}
+                                {/*<a onClick={()=>{*/}
+                                    {/*this.dsort();*/}
+                                {/*}}>Sort by Descending</a>*/}
+                            {/*</div>*/}
+                        {/*</div>*/}
+                    {/*</div>*/}
+
 
 
                 </div>
-                </center>
-            </section>
+
+            </div>
         )
     }
 }
