@@ -1,7 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import {} from 'react-bootstrap'
-import {Table,Input} from 'reactstrap'
+import {Table,Input,Pagination, PaginationItem, PaginationLink} from 'reactstrap'
 import Modal from 'react-modal';
 import './index.css';
 import 'react-confirm-alert/src/react-confirm-alert.css'
@@ -255,7 +255,7 @@ class Home extends React.Component{
         this.setState({
             totalRecords:e.target.value
         })
-        alert(this.state.totalRecords);
+       // alert(this.state.totalRecords);
     }
     handleSearch=(e)=>{
         e.preventDefault();
@@ -345,76 +345,110 @@ class Home extends React.Component{
             <div className="">
                 <br/><br/>
                 <div className=" col-lg-12">
-                    <Modal isOpen={this.state.isActive} onRequestClose={this.toggleActive}>
+                    <Modal isOpen={this.state.isActive} onRequestClose={this.toggleActive} ariaHideApp={false} style={{
+
+                        Overlay: {
+                           // height: '50%',
+                            position: 'fixed',
+                            top: '25px',
+                            left: '50%',
+                            right: '100px',
+                            bottom: '20px',
+                            background: 'white'
+                        },
+                        content: {
+                            height:'80%',
+                            width:'70%',
+                            top: '20%',
+                            marginLeft:'30px',
+                            bottom: '30%',
+                            border: 'solid brown',
+                            background: 'white',
+                            overflow: 'auto',
+                            borderRadius: '4px',
+                            outline: 'none',
+
+                        }
+                    }} >
+
+                        <div id="myform" className="col-lg-6">
 
                         <form onSubmit={this.sendData}>
-                            <Table className="myformtable">
-                                <tr>
-                                    <td>
-                                        <p className="text-primary">Employee Management System</p>
-                                    </td>
-                                    <td><i className="fa fa-close" onClick={this.toggleActive}></i></td>
-                                </tr>
-                                <tr>
-                                    <td><label>Firstname</label></td>
-                                    <td><input type="text" value={editData1.firstname} onChange={this.handleChange} name="firstname" id="txtfname" required={true}/><span>*</span></td>
-                                </tr>
-                                <tr>
-                                    <td><label>Lastname</label></td>
-                                    <td><input type="text" value={editData1.lastname} onChange={this.handleChange}  name="lastname" id="txtlname" required={true}/><span>*</span></td>
-                                </tr>
-                                <tr>
-                                    <td><label>Email</label></td>
-                                    <td><input type="email" value={editData1.email}  onChange={this.handleChange} name="email" id="txtemail" required={true}/><span>*</span></td>
-                                </tr>
-                                <tr>
-                                    <td><label>State</label></td>
-                                    <td>
-                                        <select name="state" id="selState" value={editData1.state} onChange={this.handleChange}>
-                                           <option>--select--</option>
-                                            {
-                                                this.state.state1.map((st,i)=>{
-                                                    return <option value={st.statename}>{st.statename}</option>
-                                                })
-                                            }
-                                        </select><span>*</span>
-                                    </td>
+                            <div className="form-group row" >
 
-                                </tr>
-                                <tr>
-                                    <td><label>City</label></td>
-                                    <td>
-                                        <select name="city" id="selCity" onChange={this.handleChange} >
+                                <p className=" col-sm-10 text-primary">Employee Management System</p>
+                                <div className="col-sm-2">
+                                    <i className="fa fa-close" onClick={this.toggleActive}></i>
+                                </div>
+                            </div>
+                            <div className="form-group row" >
+                                <label className="col-sm-2 col-form-label" for="txtname">Firstname<span>*</span></label>
+                                <div className="col-sm-10">
+                                    <input className="form-control" type="text" value={editData1.firstname} onChange={this.handleChange} name="firstname" id="txtfname" required={true}/>
+                                </div>
+                            </div>
+                            <div className="form-group row" >
+                                <label className="col-sm-2 col-form-label" for="txtname">Lastname<span>*</span></label>
+                                <div className="col-sm-10">
+                                    <input className="form-control" type="text" value={editData1.lastname} onChange={this.handleChange}  name="lastname" id="txtlname" required={true}/>
+                                </div>
+                            </div>
+                            <div className="form-group row" >
+                                <label className="col-sm-2 col-form-label" for="txtname">Email<span>*</span></label>
+                                <div className="col-sm-10">
+                                    <input className="form-control" type="email" value={editData1.email}  onChange={this.handleChange} name="email" id="txtemail" required={true}/>
+                                </div>
+                            </div>
+                            <div className="form-group row" >
+                                <label className="col-sm-2 col-form-label" for="txtname">State<span>*</span></label>
+                                <div className="col-sm-10">
+                                    <select className="form-control" name="state" id="selState" value={editData1.state} onChange={this.handleChange}>
+                                        <option>--Select State--</option>
+                                        {
+                                            this.state.state1.map((st,i)=>{
+                                                return <option value={st.statename}>{st.statename}</option>
+                                            })
+                                        }
+                                    </select>
+                                </div>
+                            </div>
+                            <div className="form-group row" >
+                                <label className="col-sm-2 col-form-label" for="txtname">City<span>*</span></label>
+                                <div className="col-sm-10">
+                                    <select className="form-control" name="city" id="selCity" onChange={this.handleChange} >
 
-                                            <option value={editData1.city}>{editData1.city}</option>
 
-                                            {
-                                                this.state.city1.map((c,i)=>{
-                                                    if(c.statename === editData1.state) {
-                                                            return <option value={c.cityname}>{c.cityname}</option>
-                                                        }
+                                        <option value={editData1.city}>{editData1.city}</option>
 
-                                                })
-                                            }
-                                        </select><span>*</span>
+                                        {
+                                            this.state.city1.map((c,i)=>{
+                                                if(c.statename === editData1.state) {
+                                                    return <option value={c.cityname}>{c.cityname}</option>
+                                                }
 
-                                      </td>
-                                </tr>
-                                <tr>
+                                            })
+                                        }
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div className="form-group row" >
+                                <label className="col-sm-2 col-form-label" for="txtname"></label>
+
+                                <div className="col-sm-10">
                                     {
                                         isEditing?
 
-                                            <td colspan="2"><button className="btn btn-secondary"  name="btns" value="Update" onClick={this.updateData}>Update</button></td>
-                                        :
+                                            <button className="btn btn-secondary"  name="btns" value="Update" onClick={this.updateData}>Update</button>
+                                            :
 
-                                        <td colspan="2"><button className="btn btn-warning" type="submit" name="btns" value="Insert" >Insert</button></td>
+                                           <button className="btn btn-warning" type="submit" name="btns" value="Insert" >Insert</button>
                                     }
-
-                                </tr>
-                            </Table>
-
+                                </div>
+                            </div>
 
                         </form>
+                        </div>
                     </Modal>
                 </div>
                 <div id="divShow" className="">
@@ -547,16 +581,16 @@ class Home extends React.Component{
 
                             {
                             <div>
-                                <ul className="pagination">
+                                <Pagination>
 
                                     {pages.map((p, i) => {
                                         return <li className="active" onClick={() => {
                                             this.mypage(p);
-                                        }}><a href="#">{p}</a></li>
+                                        }}><PaginationItem><PaginationLink href="#">{p}</PaginationLink></PaginationItem></li>
                                     })
                                     }
 
-                                </ul>
+                                </Pagination>
                                 <p>Shows {this.state.totalRecords} records from {len} Entries </p>
                             </div>
 
